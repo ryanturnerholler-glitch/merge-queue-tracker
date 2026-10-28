@@ -1,0 +1,4 @@
+# Every pull request requests a review from the maintainer. Only people with
+# write access can merge, and the main-branch ruleset (scripts/go-public.sh)
+# requires a pull request with passing checks for every change.
+* @ryanturnerholler-glitch

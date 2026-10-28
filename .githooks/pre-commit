@@ -1,7 +1,8 @@
 #!/bin/sh
 # Refuses a commit that would add a secret, real data, or a large file. GitHub's
 # push protection is not available on free private repos, so this hook is the
-# only guard before the CI scan. Bypass for a confirmed false positive:
+# only guard before the CI scan until the repo is public (scripts/go-public.sh
+# turns push protection on). Bypass for a confirmed false positive:
 # git commit --no-verify
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "pre-commit: gitleaks is not installed (brew install gitleaks); refusing to commit unchecked" >&2
