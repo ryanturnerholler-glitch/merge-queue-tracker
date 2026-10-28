@@ -4,7 +4,28 @@
       "pullRequest": {
         "merged": true,
         "mergedAt": "2026-10-28T12:12:30Z",
-        "timelineItems": { "nodes": [] }
+        "timelineItems": {
+          "nodes": []
+        },
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "contexts": {
+                    "nodes": [
+                      {
+                        "name": "build",
+                        "conclusion": "SUCCESS",
+                        "detailsUrl": "https://github.com/mq-demo-org/demo-app/actions/runs/1/job/1"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
       }
     },
     "p1": {
@@ -13,8 +34,58 @@
         "mergedAt": null,
         "timelineItems": {
           "nodes": [
-            { "createdAt": "2026-10-28T11:50:00Z", "reason": "CI failed" },
-            { "createdAt": "2026-10-28T12:14:10Z", "reason": "The merge queue removed this pull request because a required check failed" }
+            {
+              "createdAt": "2026-10-28T11:50:00Z",
+              "reason": "CI failed"
+            },
+            {
+              "createdAt": "2026-10-28T12:14:10Z",
+              "reason": "The merge queue removed this pull request because a required check failed"
+            }
+          ]
+        },
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "contexts": {
+                    "nodes": [
+                      {
+                        "name": "build",
+                        "conclusion": "SUCCESS",
+                        "detailsUrl": "https://github.com/mq-demo-org/demo-app/actions/runs/2/job/3"
+                      },
+                      {
+                        "name": "unit tests",
+                        "conclusion": "FAILURE",
+                        "detailsUrl": "https://github.com/mq-demo-org/demo-app/actions/runs/2/job/4"
+                      },
+                      {
+                        "name": "lint",
+                        "conclusion": "CANCELLED",
+                        "detailsUrl": null
+                      },
+                      {
+                        "name": "deploy preview",
+                        "conclusion": null,
+                        "detailsUrl": "https://github.com/mq-demo-org/demo-app/actions/runs/2/job/5"
+                      },
+                      {
+                        "context": "ci/external",
+                        "state": "ERROR",
+                        "targetUrl": "https://ci.example.com/builds/77"
+                      },
+                      {
+                        "context": "license/cla",
+                        "state": "SUCCESS",
+                        "targetUrl": "https://cla.example.com"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           ]
         }
       }
@@ -23,7 +94,18 @@
       "pullRequest": {
         "merged": false,
         "mergedAt": null,
-        "timelineItems": { "nodes": [] }
+        "timelineItems": {
+          "nodes": []
+        },
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": null
+              }
+            }
+          ]
+        }
       }
     }
   }

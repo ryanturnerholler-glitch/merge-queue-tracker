@@ -23,7 +23,7 @@ function queue(entries: QueueEntry[], extra: Partial<RepoQueue> = {}): RepoQueue
 
 describe("diffQueues", () => {
   it("reports nothing on the first poll", () => {
-    expect(diffQueues(undefined, [queue([entry(1, 1)])])).toEqual({ entered: [], moved: [], left: [] });
+    expect(diffQueues(undefined, [queue([entry(1, 1)])])).toEqual({ entered: [], moved: [], changed: [], left: [] });
   });
 
   it("detects entered, moved, and left entries", () => {
@@ -58,6 +58,15 @@ describe("diffQueues", () => {
       queue([entry(7, 1, "org/c")], { repo: "org/c" }),
       queue([entry(9, 1, "org/new")], { repo: "org/new" }),
     ];
-    expect(diffQueues(before, after)).toEqual({ entered: [], moved: [], left: [] });
+    expect(diffQueues(before, after)).toEqual({ entered: [], moved: [], changed: [], left: [] });
+  });
+
+  it("reports state changes separately from moves", () => {
+    const before = [queue([entry(1, 1), { ...entry(2, 2), state: "AWAITING_CHECKS" }])];
+    const after = [queue([{ ...entry(1, 1), state: "MERGEABLE" }, { ...entry(2, 1), state: "AWAITING_CHECKS" }, entry(3, 2)])];
+    const diff = diffQueues(before, after);
+    expect(diff.changed).toEqual([{ entry: after[0]!.entries[0], from: "QUEUED" }]);
+    expect(diff.moved.map((m) => m.entry.number)).toEqual([2]);
+    expect(diff.entered.map((e) => e.number)).toEqual([3]);
   });
 });

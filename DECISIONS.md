@@ -5,6 +5,26 @@ Append new entries at the top.
 
 ---
 
+## 2026-10-28 — Poll slowly while unfocused instead of pausing
+
+The v1 spec pauses polling when the window loses focus. That made the alerts
+fire only once the user came back and looked, which is when they need them
+least. Polling now drops to `mqTracker.unfocusedPollSeconds` (default five
+minutes) while unfocused and refreshes at once on refocus; `0` restores the
+spec's behaviour. The cost is one aliased query per five minutes against a
+5,000-point hourly limit. Rejected: OS-level notifications, which the VS Code
+API does not offer without a native dependency.
+
+## 2026-10-28 — Persist the last poll in globalState, capped at 24 hours
+
+A window reload lost the previous queue snapshot, so a pull request that
+merged during the reload silently vanished. The snapshot, the "Recent" list,
+and the filter state now live in `globalState`, keyed by GraphQL endpoint.
+A snapshot older than a day is discarded rather than diffed, so a laptop
+opened after a long weekend does not replay every merge since. Rejected:
+`workspaceState`, since the tracked repositories are user-level settings and
+the same queues show in every window.
+
 ## 2026-10-28 — Rulesets go on the day the repository goes public
 
 STANDARDS.md says no rulesets or branch protection, because they need GitHub

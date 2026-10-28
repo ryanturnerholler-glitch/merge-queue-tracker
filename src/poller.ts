@@ -2,8 +2,10 @@ import type * as vscode from "vscode";
 
 /**
  * Runs one poll at a time and schedules the next with the delay the poll
- * returns. `pause` stops scheduling (window unfocused); `resume` and `runNow`
- * poll immediately. A `runNow` during a poll queues one more run right after.
+ * returns. `pause` stops scheduling (window unfocused with slow polling off);
+ * `resume` and `runNow` poll immediately; `rescheduleIn` moves the pending
+ * poll without running one (window unfocused with slow polling on). A
+ * `runNow` during a poll queues one more run right after.
  */
 export class Poller implements vscode.Disposable {
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -14,7 +16,7 @@ export class Poller implements vscode.Disposable {
 
   constructor(
     private readonly task: () => Promise<number>,
-    private readonly log: vscode.LogOutputChannel,
+    private readonly log: Pick<vscode.LogOutputChannel, "error">,
   ) {}
 
   runNow(): void {
@@ -32,10 +34,19 @@ export class Poller implements vscode.Disposable {
     this.clearTimer();
   }
 
+  /** Clears the pause and polls at once, so refocus always refreshes. */
   resume(): void {
-    if (!this.paused) return;
     this.paused = false;
     this.runNow();
+  }
+
+  /** Clears any pause and replaces the pending timer. During a poll only the pause is cleared, since that poll schedules its own successor. */
+  rescheduleIn(delayMs: number): void {
+    if (this.disposed) return;
+    this.paused = false;
+    if (this.running) return;
+    this.clearTimer();
+    this.timer = setTimeout(() => void this.cycle(), delayMs);
   }
 
   get isPaused(): boolean {
