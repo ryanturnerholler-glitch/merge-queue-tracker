@@ -9,13 +9,13 @@ VS Code, Cursor, or VSCodium.
 
 ## Install
 
-Until the Marketplace listing is live, install from a `.vsix`:
+Search for **Merge Queue Tracker** in the Extensions view, or install it from
+the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ryanholler.merge-queue-tracker).
 
-```bash
-npm install
-npx vsce package
-code --install-extension merge-queue-tracker-0.1.0.vsix
-```
+Cursor, VSCodium, and other editors that don't use the Marketplace: download
+the `.vsix` from the [latest release](https://github.com/ryanturnerholler-glitch/merge-queue-tracker/releases/latest)
+and install it with **Extensions: Install from VSIX...** from the Command
+Palette.
 
 ## Quick start
 
