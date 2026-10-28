@@ -21,3 +21,6 @@ __pycache__/
 .vscode-test/
 out/
 .local/
+
+# Personal editor colours; launch.json and tasks.json stay tracked.
+.vscode/settings.json

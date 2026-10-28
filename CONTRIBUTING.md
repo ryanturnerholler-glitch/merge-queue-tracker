@@ -29,6 +29,19 @@ Press F5 in VS Code to launch an Extension Development Host with the build.
 Every pull request must pass `npm run check` and `npx vsce package`; CI runs
 both. Commits land through squash-merged pull requests only.
 
+## What happens to your pull request
+
+- Fork the repository and open a pull request against `main`. Nobody outside
+  the project has push access, and `main` only accepts squash merges of pull
+  requests whose checks pass.
+- The maintainer approves the first CI run on a pull request from a fork
+  (GitHub's "Approve and run" button), then reviews the change. CI runs with a
+  read-only token and no secrets, so a workflow run can't publish or push.
+- Review comments have to be resolved before the merge. The PR title becomes
+  the commit subject on `main`, so keep it under 72 characters.
+- Release tags are created by the maintainer only, and the release workflow
+  is the only thing that publishes.
+
 ## Manual QA checklist
 
 Run through this in a real VS Code window before a release, with the

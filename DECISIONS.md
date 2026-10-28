@@ -25,6 +25,20 @@ opened after a long weekend does not replay every merge since. Rejected:
 `workspaceState`, since the tracked repositories are user-level settings and
 the same queues show in every window.
 
+## 2026-10-28 — Rulesets go on the day the repository goes public
+
+STANDARDS.md says no rulesets or branch protection, because they need GitHub
+Pro on private repositories. This is the first of the author's repositories to
+go public, where they are free, so `scripts/go-public.sh` adds them the moment
+the visibility flips: `main` requires a squash-merged pull request with the
+CI, secrets, and title checks green, no force pushes, no deletion, signed
+commits; `v*` tags are created by admins only and never moved. It also turns
+on secret scanning with push protection, private vulnerability reporting, and
+CodeQL, all public-only. The local hooks stay as the second line, as the
+standards require. Rejected: paying for Pro to enable this while private, and
+requiring a reviewer approval, which a solo maintainer can't give their own
+pull request.
+
 ## 2026-10-28 — Fresh repository with a single clean commit
 
 The first private repo's scaffold squash commit message and one PR body
