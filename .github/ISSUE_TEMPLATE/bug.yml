@@ -1,0 +1,33 @@
+name: Bug report
+description: Something does not work as described
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Output channel
+      description: Relevant lines from the "Merge Queue Tracker" output channel. Remove repository names you do not want public.
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Extension version, editor (VS Code, Cursor, VSCodium) and its version, operating system.
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: GitHub host
+      options:
+        - github.com
+        - GitHub Enterprise Server
+    validations:
+      required: true

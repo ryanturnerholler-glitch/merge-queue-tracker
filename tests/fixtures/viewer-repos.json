@@ -1,0 +1,30 @@
+{
+  "data": {
+    "viewer": {
+      "repositories": {
+        "pageInfo": { "hasNextPage": false, "endCursor": "Y3Vyc29yOnYyOpHOAAAAAQ==" },
+        "nodes": [
+          {
+            "nameWithOwner": "mq-demo-org/demo-app",
+            "isArchived": false,
+            "defaultBranchRef": { "name": "main" },
+            "mergeQueue": { "id": "MQ_kwDOAAAAAQ" }
+          },
+          {
+            "nameWithOwner": "demo-user/dotfiles",
+            "isArchived": false,
+            "defaultBranchRef": { "name": "main" },
+            "mergeQueue": null
+          },
+          {
+            "nameWithOwner": "mq-demo-org/old-site",
+            "isArchived": true,
+            "defaultBranchRef": null,
+            "mergeQueue": null
+          },
+          null
+        ]
+      }
+    }
+  }
+}

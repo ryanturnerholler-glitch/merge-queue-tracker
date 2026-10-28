@@ -1,0 +1,23 @@
+.env
+.env.*
+!.env.example
+data/
+.DS_Store
+
+# Build output and tooling
+node_modules/
+dist/
+build/
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Add every new sensitive path here in the PR that creates it.
+
+# Extension packaging and local-only notes
+*.vsix
+.vscode-test/
+out/
+.local/

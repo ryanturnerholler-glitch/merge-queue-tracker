@@ -1,0 +1,70 @@
+{
+  "data": {
+    "viewer": { "login": "demo-user" },
+    "rateLimit": { "remaining": 4987, "resetAt": "2026-10-28T13:00:00Z" },
+    "r0": {
+      "nameWithOwner": "mq-demo-org/demo-app",
+      "defaultBranchRef": { "name": "main" },
+      "mergeQueue": {
+        "url": "https://github.com/mq-demo-org/demo-app/queue/main",
+        "entries": {
+          "nodes": [
+            {
+              "position": 2,
+              "state": "QUEUED",
+              "enqueuedAt": "2026-10-28T12:05:00Z",
+              "estimatedTimeToMerge": 540,
+              "enqueuer": { "login": "demo-user" },
+              "pullRequest": {
+                "number": 42,
+                "title": "Add retry to the upload client",
+                "url": "https://github.com/mq-demo-org/demo-app/pull/42",
+                "author": { "login": "demo-user" }
+              }
+            },
+            {
+              "position": 1,
+              "state": "AWAITING_CHECKS",
+              "enqueuedAt": "2026-10-28T12:01:00Z",
+              "estimatedTimeToMerge": 240,
+              "enqueuer": { "login": "octo-reviewer" },
+              "pullRequest": {
+                "number": 41,
+                "title": "Bump dependencies for the October release train and tidy the lockfile",
+                "url": "https://github.com/mq-demo-org/demo-app/pull/41",
+                "author": { "login": "dependabot" }
+              }
+            },
+            {
+              "position": 3,
+              "state": "UNMERGEABLE",
+              "enqueuedAt": "2026-10-28T12:07:00Z",
+              "estimatedTimeToMerge": null,
+              "enqueuer": { "login": "octo-reviewer" },
+              "pullRequest": {
+                "number": 43,
+                "title": "Rename config keys",
+                "url": "https://github.com/mq-demo-org/demo-app/pull/43",
+                "author": { "login": "octo-reviewer" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "r1": {
+      "nameWithOwner": "mq-demo-org/demo-docs",
+      "defaultBranchRef": { "name": "trunk" },
+      "mergeQueue": null
+    },
+    "r2": null
+  },
+  "errors": [
+    {
+      "type": "NOT_FOUND",
+      "path": ["r2"],
+      "locations": [{ "line": 6, "column": 3 }],
+      "message": "Could not resolve to a Repository with the name 'mq-demo-org/missing'."
+    }
+  ]
+}

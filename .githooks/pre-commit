@@ -1,0 +1,30 @@
+#!/bin/sh
+# Refuses a commit that would add a secret, real data, or a large file. GitHub's
+# push protection is not available on free private repos, so this hook is the
+# only guard before the CI scan. Bypass for a confirmed false positive:
+# git commit --no-verify
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed (brew install gitleaks); refusing to commit unchecked" >&2
+  exit 1
+fi
+gitleaks git --pre-commit --staged --no-banner --redact || exit 1
+
+# Real data stays out of git even when it's force-added past .gitignore. Test
+# data is synthetic and lives under tests/fixtures/.
+blocked=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR | while IFS= read -r f; do
+  case "$f" in
+    (*.env.example) ;;
+    (.env|.env.*|*/.env|*/.env.*) echo "  $f: env file" ;;
+    (*.db|*.sqlite|*.sqlite3) echo "  $f: database file" ;;
+    (*.pem|*.p12|*.key) echo "  $f: key or certificate" ;;
+    (tests/fixtures/*|*/tests/fixtures/*) ;;
+    (*.[cC][sS][vV]|*.[oO][fF][xX]|*.[qQ][fF][xX]) echo "  $f: data export outside tests/fixtures/" ;;
+  esac
+  size=$(git cat-file -s ":$f" 2>/dev/null)
+  if [ "${size:-0}" -gt 1048576 ]; then echo "  $f: $size bytes, over the 1 MB limit"; fi
+done)
+if [ -n "$blocked" ]; then
+  echo "pre-commit: refusing to commit real data or a large file:" >&2
+  echo "$blocked" >&2
+  exit 1
+fi

@@ -1,0 +1,3 @@
+# Text files are stored and checked out with LF on every machine, so Windows
+# and Mac clones write the same bytes and diffs don't churn on line endings.
+* text=auto eol=lf

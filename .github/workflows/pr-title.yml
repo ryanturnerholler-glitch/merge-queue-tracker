@@ -1,0 +1,26 @@
+# The squash merge uses the PR title as the commit subject on main, so the
+# title is checked here, on title edits too. Ubuntu, a few seconds, no checkout.
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          [ "${#TITLE}" -le 72 ] || fail "PR title is ${#TITLE} characters; keep it to 72."
+          case "$TITLE" in
+            *.) fail "PR title ends with a period." ;;
+            [Ww][Ii][Pp]|[Ww][Ii][Pp][[:blank:]:]*) fail "PR title is a placeholder. Open a draft PR instead." ;;
+          esac
+          echo "PR title ok: $TITLE"

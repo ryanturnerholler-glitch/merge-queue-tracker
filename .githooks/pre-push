@@ -1,0 +1,12 @@
+#!/bin/sh
+# Refuses a direct push to main. Every change lands through a squash-merged PR.
+# Branch protection is not available on free private repos, so this is the
+# substitute. Bypass only when you mean it: git push --no-verify
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      echo "pre-push: direct push to ${remote_ref#refs/heads/} refused. Open a PR instead." >&2
+      exit 1 ;;
+  esac
+done
+exit 0

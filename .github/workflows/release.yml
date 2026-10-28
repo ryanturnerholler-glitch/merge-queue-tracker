@@ -1,0 +1,42 @@
+# Runs when a v* tag is pushed. Builds the .vsix, attaches it to a GitHub
+# release, and publishes to the VS Code Marketplace and Open VSX when the
+# VSCE_PAT and OVSX_PAT secrets exist. Nothing publishes without a tag push.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Check the tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME does not match package.json version $version"; exit 1; }
+      - name: Package
+        run: npx vsce package --out "merge-queue-tracker-$GITHUB_REF_NAME.vsix"
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes "merge-queue-tracker-$GITHUB_REF_NAME.vsix"
+      - name: Publish to the VS Code Marketplace
+        if: env.VSCE_PAT != ''
+        run: npx vsce publish --packagePath "merge-queue-tracker-$GITHUB_REF_NAME.vsix" -p "$VSCE_PAT"
+      - name: Publish to Open VSX
+        if: env.OVSX_PAT != ''
+        run: npx ovsx publish "merge-queue-tracker-$GITHUB_REF_NAME.vsix" -p "$OVSX_PAT"

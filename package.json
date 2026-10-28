@@ -1,0 +1,268 @@
+{
+  "name": "merge-queue-tracker",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "ryanholler",
+  "license": "MIT",
+  "author": "Ryan Holler",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "keywords": [
+    "github",
+    "merge queue",
+    "pull request",
+    "ci"
+  ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1f2328",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryanturnerholler-glitch/merge-queue-tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryanturnerholler-glitch/merge-queue-tracker/issues"
+  },
+  "homepage": "https://github.com/ryanturnerholler-glitch/merge-queue-tracker#readme",
+  "main": "./dist/extension.js",
+  "l10n": "./l10n",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mqTracker",
+          "title": "%viewContainer.title%",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "mqTracker": [
+        {
+          "id": "mqTracker.queues",
+          "name": "%view.queues.name%",
+          "icon": "media/activity-icon.svg",
+          "contextualTitle": "%viewContainer.title%"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "mqTracker.queues",
+        "contents": "%welcome.noRepos%",
+        "when": "!mqTracker.hasRepos"
+      },
+      {
+        "view": "mqTracker.queues",
+        "contents": "%welcome.signIn%",
+        "when": "mqTracker.hasRepos && !mqTracker.signedIn"
+      }
+    ],
+    "commands": [
+      {
+        "command": "mqTracker.refresh",
+        "title": "%command.refresh%",
+        "category": "%category%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "mqTracker.addRepo",
+        "title": "%command.addRepo%",
+        "category": "%category%",
+        "icon": "$(add)"
+      },
+      {
+        "command": "mqTracker.openSettings",
+        "title": "%command.openSettings%",
+        "category": "%category%",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "mqTracker.signIn",
+        "title": "%command.signIn%",
+        "category": "%category%"
+      },
+      {
+        "command": "mqTracker.removeRepo",
+        "title": "%command.removeRepo%",
+        "category": "%category%"
+      },
+      {
+        "command": "mqTracker.openQueue",
+        "title": "%command.openQueue%",
+        "category": "%category%",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "mqTracker.openPr",
+        "title": "%command.openPr%",
+        "category": "%category%"
+      },
+      {
+        "command": "mqTracker.openChecks",
+        "title": "%command.openChecks%",
+        "category": "%category%",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "mqTracker.toggleDemo",
+        "title": "%command.toggleDemo%",
+        "category": "%category%"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mqTracker.refresh",
+          "when": "view == mqTracker.queues",
+          "group": "navigation@1"
+        },
+        {
+          "command": "mqTracker.addRepo",
+          "when": "view == mqTracker.queues",
+          "group": "navigation@2"
+        },
+        {
+          "command": "mqTracker.openSettings",
+          "when": "view == mqTracker.queues",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "mqTracker.openQueue",
+          "when": "view == mqTracker.queues && viewItem == repo",
+          "group": "inline"
+        },
+        {
+          "command": "mqTracker.openQueue",
+          "when": "view == mqTracker.queues && viewItem == repo",
+          "group": "0_open"
+        },
+        {
+          "command": "mqTracker.removeRepo",
+          "when": "view == mqTracker.queues && viewItem == repo",
+          "group": "1_modify"
+        },
+        {
+          "command": "mqTracker.openChecks",
+          "when": "view == mqTracker.queues && viewItem == removed",
+          "group": "inline"
+        },
+        {
+          "command": "mqTracker.openPr",
+          "when": "view == mqTracker.queues && viewItem =~ /^(entry|merged|removed)$/",
+          "group": "0_open@1"
+        },
+        {
+          "command": "mqTracker.openChecks",
+          "when": "view == mqTracker.queues && viewItem =~ /^(entry|removed)$/",
+          "group": "0_open@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mqTracker.removeRepo",
+          "when": "false"
+        },
+        {
+          "command": "mqTracker.openQueue",
+          "when": "false"
+        },
+        {
+          "command": "mqTracker.openPr",
+          "when": "false"
+        },
+        {
+          "command": "mqTracker.openChecks",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "%displayName%",
+      "properties": {
+        "mqTracker.repos": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "%config.repos%",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": [
+              "repo"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "repo": {
+                "type": "string",
+                "description": "%config.repos.repo%",
+                "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"
+              },
+              "branch": {
+                "type": "string",
+                "description": "%config.repos.branch%"
+              }
+            }
+          }
+        },
+        "mqTracker.pollSeconds": {
+          "type": "number",
+          "default": 45,
+          "minimum": 15,
+          "description": "%config.pollSeconds%"
+        },
+        "mqTracker.notify": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.notify%"
+        },
+        "mqTracker.enterpriseUri": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.enterpriseUri%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node20 --sourcemap",
+    "watch": "npm run build -- --watch",
+    "lint": "eslint src scripts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "l10n": "node scripts/l10n-export.mjs",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^20.19.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.39.0",
+    "ovsx": "^0.10.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.0"
+  }
+}

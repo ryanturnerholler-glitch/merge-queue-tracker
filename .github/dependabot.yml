@@ -1,0 +1,19 @@
+# One grouped PR per ecosystem per month. Keeps the noise to a couple of PRs
+# instead of one per package. Add an entry per ecosystem the repo uses (pip,
+# npm, swift, ...) in the PR that introduces it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      npm:
+        patterns: ["*"]
