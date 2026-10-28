@@ -5,6 +5,16 @@ All notable changes to this extension are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-28
+
+First public release, on the VS Code Marketplace and as a `.vsix` attached to
+the GitHub release. No functional changes since 0.1.0.
+
+### Changed
+
+- Development dependencies updated (vitest 5, eslint 10, esbuild 0.28,
+  vsce 4), clearing the open security advisories in the test tool chain.
+
 ## [0.1.0] - 2026-10-28
 
 First private build.
