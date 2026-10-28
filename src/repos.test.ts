@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_REPOS, parseRepoInput, readTrackedRepos, repoKey } from "./repos";
+import { MAX_REPOS, parseRepoInput, readTrackedRepos, remoteHost, repoKey, reposFromRemotes } from "./repos";
 
 describe("parseRepoInput", () => {
   it.each([
@@ -58,5 +58,35 @@ describe("readTrackedRepos", () => {
   it("treats a missing or non-array setting as empty", () => {
     expect(readTrackedRepos(undefined).repos).toEqual([]);
     expect(readTrackedRepos("org/app").repos).toEqual([]);
+  });
+});
+
+describe("remoteHost", () => {
+  it("reads the host from https, ssh, scp-style, and bare remotes", () => {
+    expect(remoteHost("https://github.com/org/app.git")).toBe("github.com");
+    expect(remoteHost("https://user:token@GitHub.com:443/org/app")).toBe("github.com");
+    expect(remoteHost("git@github.com:org/app.git")).toBe("github.com");
+    expect(remoteHost("ssh://git@ghe.example.com/org/app.git")).toBe("ghe.example.com");
+    expect(remoteHost("ghe.example.com/org/app")).toBe("ghe.example.com");
+    expect(remoteHost("")).toBeUndefined();
+    expect(remoteHost("not a url at all")).toBeUndefined();
+  });
+});
+
+describe("reposFromRemotes", () => {
+  it("keeps only remotes on the given host, parsed and deduplicated in order", () => {
+    const urls = [
+      "git@github.com:Org/App.git",
+      "https://github.com/org/app",
+      "https://gitlab.com/org/app.git",
+      "git@ghe.example.com:team/service.git",
+      "https://github.com/org/other.git",
+    ];
+    expect(reposFromRemotes(urls, "github.com")).toEqual([
+      { owner: "Org", name: "App" },
+      { owner: "org", name: "other" },
+    ]);
+    expect(reposFromRemotes(urls, "GHE.example.com")).toEqual([{ owner: "team", name: "service" }]);
+    expect(reposFromRemotes(urls, "bitbucket.org")).toEqual([]);
   });
 });

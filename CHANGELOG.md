@@ -5,6 +5,31 @@ All notable changes to this extension are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Polling continues at a slower rate while the window is unfocused
+  (`mqTracker.unfocusedPollSeconds`, default five minutes; `0` pauses as
+  before), so merge and removal alerts arrive while you work elsewhere.
+- The last poll, the "Recent" list, and the filter state survive a window
+  reload, so a pull request that merged meanwhile still notifies.
+- "Track This Workspace's Repository" adds the open folder's GitHub remote,
+  from the view title, the welcome view, or the Command Palette.
+- Removal alerts and "Recent" rows name the checks that failed, and
+  "Open checks" jumps to the first failing check.
+- Alerts when one of your pull requests becomes next to merge or turns
+  unmergeable while queued (`mqTracker.notifyProgress`).
+- A filter button that shows only your own pull requests.
+- A "+N more in the queue" row when a queue has more than 50 entries.
+- A "Single sign-on required" row, linking to the authorization page, when an
+  organisation enforces SAML and VS Code's token is not authorised for it.
+- "Show Merge Queues" command, and the view title shows when the last poll ran.
+- A Get Started walkthrough.
+
+### Changed
+
+- `mqTracker.enterpriseUri` falls back to VS Code's `github-enterprise.uri`,
+  so GitHub Enterprise users set one setting instead of two.
+
 ## [0.1.0] - 2026-10-28
 
 First private build.

@@ -36,6 +36,38 @@ export function parseRepoInput(input: string): { owner: string; name: string } |
   return valid(parts[0] ?? "", parts[1] ?? "");
 }
 
+/**
+ * The host of a git remote URL, lower-cased and without credentials or port:
+ * `git@github.com:o/n.git` and `https://user@github.com:443/o/n` both give `github.com`.
+ */
+export function remoteHost(url: string): string | undefined {
+  const text = url.trim();
+  if (!text) return undefined;
+  const scp = /^(?:[^@/\s]+@)?([^:/\s]+):(?!\/\/)[^/\s]+\/[^/\s]+\/?$/.exec(text);
+  if (scp && !text.includes("://")) return scp[1]?.toLowerCase();
+  try {
+    return new URL(text.includes("://") ? text : `https://${text}`).hostname.toLowerCase() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Repositories among the remote URLs that live on `host`, deduplicated and in order. */
+export function reposFromRemotes(remoteUrls: string[], host: string): TrackedRepo[] {
+  const seen = new Set<string>();
+  const repos: TrackedRepo[] = [];
+  for (const url of remoteUrls) {
+    if (remoteHost(url) !== host.toLowerCase()) continue;
+    const parsed = parseRepoInput(url);
+    if (!parsed) continue;
+    const key = repoKey(parsed).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    repos.push(parsed);
+  }
+  return repos;
+}
+
 export function repoKey(repo: { owner: string; name: string }): string {
   return `${repo.owner}/${repo.name}`;
 }
