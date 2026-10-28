@@ -1,6 +1,11 @@
 # Runs when a v* tag is pushed. Builds the .vsix, attaches it to a GitHub
 # release, and publishes to the VS Code Marketplace and Open VSX when the
 # VSCE_PAT and OVSX_PAT secrets exist. Nothing publishes without a tag push.
+#
+# The store tokens are given only to the two publish steps, never to the job:
+# npm ci and the tests run third-party package code, and a compromised
+# package must not find a publishing token in its environment. A step `if`
+# can't read secrets, so each publish step checks for its token in the shell.
 name: Release
 
 on:
@@ -13,9 +18,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -35,8 +37,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes "merge-queue-tracker-$GITHUB_REF_NAME.vsix"
       - name: Publish to the VS Code Marketplace
-        if: env.VSCE_PAT != ''
-        run: npx vsce publish --packagePath "merge-queue-tracker-$GITHUB_REF_NAME.vsix" -p "$VSCE_PAT"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          [ -n "$VSCE_PAT" ] || { echo "::notice::VSCE_PAT is not set; skipping the Marketplace"; exit 0; }
+          npx vsce publish --packagePath "merge-queue-tracker-$GITHUB_REF_NAME.vsix" -p "$VSCE_PAT"
       - name: Publish to Open VSX
-        if: env.OVSX_PAT != ''
-        run: npx ovsx publish "merge-queue-tracker-$GITHUB_REF_NAME.vsix" -p "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          [ -n "$OVSX_PAT" ] || { echo "::notice::OVSX_PAT is not set; skipping Open VSX"; exit 0; }
+          npx ovsx publish "merge-queue-tracker-$GITHUB_REF_NAME.vsix" -p "$OVSX_PAT"
