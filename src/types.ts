@@ -32,8 +32,12 @@ export interface RepoQueue {
   hasQueue: boolean;
   queueUrl: string | null;
   entries: QueueEntry[];
+  /** How many entries the queue holds in total; more than `entries.length` when the page was cut off. */
+  totalCount?: number;
   /** Set when GitHub could not return this repository (not found, no access). */
   error?: string;
+  /** The error is GitHub's SAML single sign-on enforcement: the token needs authorizing for the organisation. */
+  ssoRequired?: boolean;
 }
 
 export interface RateLimit {
@@ -48,10 +52,16 @@ export interface PollResult {
   rateLimit: RateLimit | null;
 }
 
+/** A check or status that failed on the pull request's head commit. */
+export interface FailedCheck {
+  name: string;
+  url: string | null;
+}
+
 /** Why a pull request left the queue. */
 export type Outcome =
   | { kind: "merged"; at: string | null }
-  | { kind: "removed"; at: string | null; reason: string | null };
+  | { kind: "removed"; at: string | null; reason: string | null; failedChecks?: FailedCheck[] };
 
 export interface RecentEvent {
   entry: QueueEntry;

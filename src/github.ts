@@ -1,4 +1,4 @@
-import type { EntryState, Outcome, PollResult, QueueEntry, RepoQueue, TrackedRepo } from "./types";
+import type { EntryState, FailedCheck, Outcome, PollResult, QueueEntry, RepoQueue, TrackedRepo } from "./types";
 import { ENTRY_STATES } from "./types";
 import { repoKey } from "./repos";
 
@@ -33,10 +33,37 @@ export function graphqlEndpoint(enterpriseUri: string | undefined): string {
   return `${url.origin}/api/graphql`;
 }
 
+/** The web origin of the GitHub host, `https://github.com` or the enterprise server. */
+export function webOrigin(enterpriseUri: string | undefined): string {
+  return new URL(graphqlEndpoint(enterpriseUri)).origin.replace("://api.", "://");
+}
+
+/** The host name remotes must point at to belong to the configured GitHub, such as `github.com`. */
+export function webHost(enterpriseUri: string | undefined): string {
+  return new URL(webOrigin(enterpriseUri)).host.toLowerCase();
+}
+
 /** The web URL of a merge queue page, used when GitHub did not return one. */
 export function queuePageUrl(enterpriseUri: string | undefined, repo: TrackedRepo, branch: string): string {
-  const origin = new URL(graphqlEndpoint(enterpriseUri)).origin.replace("://api.", "://");
-  return `${origin}/${repo.owner}/${repo.name}/queue/${encodeURIComponent(branch)}`;
+  return `${webOrigin(enterpriseUri)}/${repo.owner}/${repo.name}/queue/${encodeURIComponent(branch)}`;
+}
+
+/** The OAuth app client id VS Code's built-in GitHub sign-in uses on github.com. */
+const VSCODE_GITHUB_APP_CLIENT_ID = "01ab8ac9400c4e429b23";
+
+/**
+ * Where to grant VS Code's GitHub token access to a SAML-protected organisation.
+ * On github.com that is VS Code's own OAuth app page; elsewhere the generic
+ * authorized-applications list.
+ */
+export function ssoAuthorizeUrl(enterpriseUri: string | undefined): string {
+  const origin = webOrigin(enterpriseUri);
+  return origin === "https://github.com" ? `${origin}/settings/connections/applications/${VSCODE_GITHUB_APP_CLIENT_ID}` : `${origin}/settings/applications`;
+}
+
+/** GitHub's per-repository error when an organisation enforces SAML single sign-on. */
+export function isSsoError(message: string | undefined): boolean {
+  return !!message && /\bSAML\b|single sign-on/i.test(message);
 }
 
 export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
@@ -96,9 +123,12 @@ function messageOf(error: unknown): string {
 
 // --- Merge queue poll -------------------------------------------------------
 
+export const QUEUE_PAGE_SIZE = 50;
+
 const QUEUE_FRAGMENT = `fragment QueueFields on MergeQueue {
   url
-  entries(first: 50) {
+  entries(first: ${QUEUE_PAGE_SIZE}) {
+    totalCount
     nodes {
       position
       state
@@ -161,7 +191,10 @@ interface EntryNode {
 interface RepoNode {
   nameWithOwner?: string | null;
   defaultBranchRef?: { name?: string | null } | null;
-  mergeQueue?: { url?: string | null; entries?: { nodes?: (EntryNode | null)[] | null } | null } | null;
+  mergeQueue?: {
+    url?: string | null;
+    entries?: { totalCount?: number | null; nodes?: (EntryNode | null)[] | null } | null;
+  } | null;
 }
 
 export interface QueueResponseData {
@@ -184,7 +217,9 @@ export function parseQueueResponse(repos: TrackedRepo[], response: GraphQLRespon
     const node = data[alias] as RepoNode | null | undefined;
     if (!node) {
       const error = errors.find((e) => e.path?.[0] === alias)?.message ?? "Repository not found or not accessible.";
-      return { repo: key, branch: repo.branch ?? "", hasQueue: false, queueUrl: null, entries: [], error };
+      const failed: RepoQueue = { repo: key, branch: repo.branch ?? "", hasQueue: false, queueUrl: null, entries: [], error };
+      if (isSsoError(error)) failed.ssoRequired = true;
+      return failed;
     }
     const branch = repo.branch ?? node.defaultBranchRef?.name ?? "";
     const queue = node.mergeQueue;
@@ -208,7 +243,8 @@ export function parseQueueResponse(repos: TrackedRepo[], response: GraphQLRespon
         };
       })
       .sort((a, b) => a.position - b.position);
-    return { repo: key, branch, hasQueue: true, queueUrl: queue.url ?? null, entries };
+    const totalCount = typeof queue.entries?.totalCount === "number" ? Math.max(queue.entries.totalCount, entries.length) : entries.length;
+    return { repo: key, branch, hasQueue: true, queueUrl: queue.url ?? null, entries, totalCount };
   });
 
   const remaining = data.rateLimit?.remaining;
@@ -222,7 +258,14 @@ export function parseQueueResponse(repos: TrackedRepo[], response: GraphQLRespon
 
 // --- Why a pull request left the queue --------------------------------------
 
-/** Looks up merged state and the latest removal event for pull requests that left a queue. */
+const FAILED_CHECK_CONCLUSIONS = new Set(["FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
+const FAILED_STATUS_STATES = new Set(["FAILURE", "ERROR"]);
+
+/**
+ * Looks up merged state, the latest removal event, and the head commit's
+ * failed checks for pull requests that left a queue. The failed checks turn
+ * GitHub's generic removal reason into the name of the job to open.
+ */
 export function buildOutcomeQuery(entries: { repo: string; number: number }[]): BuiltQuery {
   const declarations: string[] = [];
   const selections: string[] = [];
@@ -234,11 +277,25 @@ export function buildOutcomeQuery(entries: { repo: string; number: number }[]): 
     variables[`n${i}`] = name;
     variables[`p${i}`] = entry.number;
     selections.push(
-      `p${i}: repository(owner: $o${i}, name: $n${i}) { pullRequest(number: $p${i}) { merged mergedAt timelineItems(last: 5, itemTypes: [REMOVED_FROM_MERGE_QUEUE_EVENT]) { nodes { ... on RemovedFromMergeQueueEvent { createdAt reason } } } } }`,
+      `p${i}: repository(owner: $o${i}, name: $n${i}) { pullRequest(number: $p${i}) { merged mergedAt ` +
+        `timelineItems(last: 5, itemTypes: [REMOVED_FROM_MERGE_QUEUE_EVENT]) { nodes { ... on RemovedFromMergeQueueEvent { createdAt reason } } } ` +
+        `commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes { ` +
+        `... on CheckRun { name conclusion detailsUrl } ... on StatusContext { context state targetUrl } } } } } } } } }`,
     );
   });
   const query = `query QueueOutcomes(${declarations.join(", ")}) {\n  ${selections.join("\n  ")}\n}`;
   return { query, variables };
+}
+
+interface CheckContextNode {
+  /** CheckRun */
+  name?: string | null;
+  conclusion?: string | null;
+  detailsUrl?: string | null;
+  /** StatusContext */
+  context?: string | null;
+  state?: string | null;
+  targetUrl?: string | null;
 }
 
 export interface OutcomeResponseData {
@@ -247,8 +304,24 @@ export interface OutcomeResponseData {
       merged?: boolean | null;
       mergedAt?: string | null;
       timelineItems?: { nodes?: ({ createdAt?: string | null; reason?: string | null } | null)[] | null } | null;
+      commits?: {
+        nodes?: ({ commit?: { statusCheckRollup?: { contexts?: { nodes?: (CheckContextNode | null)[] | null } | null } | null } | null } | null)[] | null;
+      } | null;
     } | null;
   } | null;
+}
+
+export function failedChecksOf(contexts: (CheckContextNode | null)[] | null | undefined): FailedCheck[] {
+  const failed: FailedCheck[] = [];
+  for (const node of contexts ?? []) {
+    if (!node) continue;
+    if (node.name && node.conclusion && FAILED_CHECK_CONCLUSIONS.has(node.conclusion)) {
+      failed.push({ name: node.name, url: node.detailsUrl ?? null });
+    } else if (node.context && node.state && FAILED_STATUS_STATES.has(node.state)) {
+      failed.push({ name: node.context, url: node.targetUrl ?? null });
+    }
+  }
+  return failed;
 }
 
 export function parseOutcomes(count: number, response: GraphQLResponse<OutcomeResponseData>): Outcome[] {
@@ -258,7 +331,10 @@ export function parseOutcomes(count: number, response: GraphQLResponse<OutcomeRe
     if (pr?.merged) return { kind: "merged", at: pr.mergedAt ?? null };
     const events = (pr?.timelineItems?.nodes ?? []).filter((n) => n !== null);
     const last = events[events.length - 1];
-    return { kind: "removed", at: last?.createdAt ?? null, reason: last?.reason?.trim() || null };
+    const outcome: Outcome = { kind: "removed", at: last?.createdAt ?? null, reason: last?.reason?.trim() || null };
+    const failedChecks = failedChecksOf(pr?.commits?.nodes?.[0]?.commit?.statusCheckRollup?.contexts?.nodes);
+    if (failedChecks.length) outcome.failedChecks = failedChecks;
+    return outcome;
   });
 }
 

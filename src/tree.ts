@@ -11,6 +11,8 @@ export type Node =
   | { kind: "invalid"; entries: string[] }
   | { kind: "repo"; tracked: TrackedRepo; queue: RepoQueue | undefined }
   | { kind: "info"; repo: string; message: string; isError: boolean }
+  | { kind: "link"; repo: string; message: string; url: string; icon: string; tooltip?: string }
+  | { kind: "hidden"; repo: string; count: number }
   | { kind: "entry"; entry: QueueEntry; own: boolean }
   | { kind: "detail"; entry: QueueEntry }
   | { kind: "recent" }
@@ -25,6 +27,10 @@ export interface TreeState {
   warning: string | undefined;
   recent: RecentEvent[];
   signedIn: boolean;
+  /** Show only the viewer's own pull requests. */
+  ownOnly: boolean;
+  /** Where to authorize the token for a SAML-protected organisation. */
+  ssoUrl: string;
 }
 
 const EMPTY_STATE: TreeState = {
@@ -36,6 +42,8 @@ const EMPTY_STATE: TreeState = {
   warning: undefined,
   recent: [],
   signedIn: false,
+  ownOnly: false,
+  ssoUrl: "",
 };
 
 function stateLabel(state: EntryState): string {
@@ -96,13 +104,41 @@ export class QueueTreeProvider implements vscode.TreeDataProvider<Node>, vscode.
         if (!queue) {
           return s.loading ? [{ kind: "info", repo: key, message: l10n.t("Loading…"), isError: false }] : [];
         }
+        if (queue.ssoRequired) {
+          return [
+            {
+              kind: "link",
+              repo: key,
+              message: l10n.t("Single sign-on required: authorize VS Code's GitHub access for {0}", element.tracked.owner),
+              url: s.ssoUrl,
+              icon: "key",
+              tooltip: queue.error ?? "",
+            },
+          ];
+        }
         if (queue.error) return [{ kind: "info", repo: key, message: queue.error, isError: true }];
         if (!queue.hasQueue) {
           return [{ kind: "info", repo: key, message: l10n.t("No merge queue on {0}", queue.branch), isError: false }];
         }
         if (!queue.entries.length) return [{ kind: "info", repo: key, message: l10n.t("Queue empty"), isError: false }];
         const viewer = s.poll?.viewer ?? "";
-        return queue.entries.map((entry) => ({ kind: "entry", entry, own: isOwn(entry, viewer) }));
+        const all = queue.entries.map((entry): Node => ({ kind: "entry", entry, own: isOwn(entry, viewer) }));
+        const shown = s.ownOnly ? all.filter((n) => n.kind === "entry" && n.own) : all;
+        const children: Node[] = [...shown];
+        const hidden = all.length - shown.length;
+        if (hidden > 0) children.push({ kind: "hidden", repo: key, count: hidden });
+        const beyond = (queue.totalCount ?? queue.entries.length) - queue.entries.length;
+        if (beyond > 0 && queue.queueUrl) {
+          children.push({
+            kind: "link",
+            repo: key,
+            message: l10n.t("{0} more in the queue", beyond),
+            url: queue.queueUrl,
+            icon: "ellipsis",
+            tooltip: l10n.t("Only the first {0} entries are shown. Open the queue on GitHub for the rest.", queue.entries.length),
+          });
+        }
+        return children;
       }
       case "entry":
         return [{ kind: "detail", entry: element.entry }];
@@ -149,6 +185,24 @@ export class QueueTreeProvider implements vscode.TreeDataProvider<Node>, vscode.
         item.contextValue = "info";
         return item;
       }
+      case "link": {
+        const item = new vscode.TreeItem(node.message);
+        item.id = `link:${node.repo}:${node.icon}`;
+        item.iconPath = new vscode.ThemeIcon(node.icon);
+        item.tooltip = node.tooltip || node.message;
+        item.contextValue = "link";
+        item.command = { command: "mqTracker.openLink", title: node.message, arguments: [node] };
+        return item;
+      }
+      case "hidden": {
+        const item = new vscode.TreeItem(l10n.t("{0} other pull requests hidden by the filter", node.count));
+        item.id = `hidden:${node.repo}`;
+        item.iconPath = new vscode.ThemeIcon("filter");
+        item.tooltip = l10n.t("Click to show every pull request");
+        item.contextValue = "hidden";
+        item.command = { command: "mqTracker.showAll", title: l10n.t("Show All Pull Requests") };
+        return item;
+      }
       case "entry":
         return this.entryItem(node.entry, node.own);
       case "detail": {
@@ -180,7 +234,7 @@ export class QueueTreeProvider implements vscode.TreeDataProvider<Node>, vscode.
     const item = new vscode.TreeItem(`${tracked.name} · ${branch}`, vscode.TreeItemCollapsibleState.Expanded);
     item.id = `repo:${key}`;
     item.iconPath = new vscode.ThemeIcon("repo");
-    item.description = queue?.hasQueue ? String(queue.entries.length) : "";
+    item.description = queue?.hasQueue ? String(queue.totalCount ?? queue.entries.length) : "";
     item.tooltip = key;
     item.contextValue = "repo";
     return item;
@@ -224,7 +278,9 @@ export class QueueTreeProvider implements vscode.TreeDataProvider<Node>, vscode.
       item.description = l10n.t("merged {0}", when);
       item.contextValue = "merged";
     } else {
+      const failed = outcome.failedChecks?.map((c) => c.name) ?? [];
       item.description = l10n.t("removed: {0}", outcome.reason ?? l10n.t("reason not reported"));
+      if (failed.length) item.description += ` · ${l10n.t("failed: {0}", failed.join(", "))}`;
       item.contextValue = "removed";
     }
     item.tooltip = `${entry.repo} #${entry.number} ${entry.title}\n${item.description}`;
