@@ -1,7 +1,8 @@
 #!/bin/sh
 # Refuses a direct push to main. Every change lands through a squash-merged PR.
 # Branch protection is not available on free private repos, so this is the
-# substitute. Bypass only when you mean it: git push --no-verify
+# first line; the main-branch ruleset from scripts/go-public.sh is the second
+# once the repo is public. Bypass only when you mean it: git push --no-verify
 while read -r _local_ref _local_sha remote_ref _remote_sha; do
   case "$remote_ref" in
     refs/heads/main|refs/heads/master)

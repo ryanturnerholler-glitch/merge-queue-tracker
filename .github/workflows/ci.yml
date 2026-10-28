@@ -16,7 +16,7 @@ concurrency:
 jobs:
   secrets:
     # Second line behind the .githooks/pre-commit scan. GitHub's own secret
-    # scanning is not available on free private repos.
+    # scanning only runs once the repo is public (scripts/go-public.sh).
     runs-on: ubuntu-latest
     permissions:
       contents: read

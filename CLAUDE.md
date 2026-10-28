@@ -27,6 +27,9 @@ The build spec is [`docs/SPEC.md`](docs/SPEC.md). Read it before any work.
 - Verify in a real VS Code window, not just tests: install the `.vsix`, and
   check the Output channel for polling behaviour.
 - Test fixtures are recorded from a demo repo, never from real queues.
+- Going public is Ryan's command to run, never Claude's. Right after it, run
+  `sh scripts/go-public.sh` for the rulesets and security settings that are
+  only available on public repos.
 
 ## Repo standards
 
