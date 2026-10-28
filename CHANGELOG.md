@@ -5,6 +5,11 @@ All notable changes to this extension are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-28
+
+First public release, on the VS Code Marketplace and as a `.vsix` attached to
+the GitHub release.
+
 ### Added
 
 - Polling continues at a slower rate while the window is unfocused
@@ -29,6 +34,8 @@ All notable changes to this extension are recorded here. The format follows
 
 - `mqTracker.enterpriseUri` falls back to VS Code's `github-enterprise.uri`,
   so GitHub Enterprise users set one setting instead of two.
+- Development dependencies updated (vitest 5, eslint 10, esbuild 0.28,
+  vsce 4), clearing the open security advisories in the test tool chain.
 
 ## [0.1.0] - 2026-10-28
 

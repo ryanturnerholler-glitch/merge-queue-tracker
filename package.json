@@ -2,7 +2,7 @@
   "name": "merge-queue-tracker",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "publisher": "ryanholler",
   "license": "MIT",
   "author": "Ryan Holler",
