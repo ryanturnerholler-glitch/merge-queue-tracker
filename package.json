@@ -71,6 +71,11 @@
       },
       {
         "view": "mqTracker.queues",
+        "contents": "%welcome.workspaceRepo%",
+        "when": "!mqTracker.hasRepos && mqTracker.hasWorkspaceRepo"
+      },
+      {
+        "view": "mqTracker.queues",
         "contents": "%welcome.signIn%",
         "when": "mqTracker.hasRepos && !mqTracker.signedIn"
       }
@@ -125,6 +130,34 @@
         "command": "mqTracker.toggleDemo",
         "title": "%command.toggleDemo%",
         "category": "%category%"
+      },
+      {
+        "command": "mqTracker.show",
+        "title": "%command.show%",
+        "category": "%category%"
+      },
+      {
+        "command": "mqTracker.addWorkspaceRepo",
+        "title": "%command.addWorkspaceRepo%",
+        "category": "%category%",
+        "icon": "$(source-control)"
+      },
+      {
+        "command": "mqTracker.showOwnOnly",
+        "title": "%command.showOwnOnly%",
+        "category": "%category%",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "mqTracker.showAll",
+        "title": "%command.showAll%",
+        "category": "%category%",
+        "icon": "$(filter-filled)"
+      },
+      {
+        "command": "mqTracker.openLink",
+        "title": "%command.openLink%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -135,14 +168,29 @@
           "group": "navigation@1"
         },
         {
+          "command": "mqTracker.showOwnOnly",
+          "when": "view == mqTracker.queues && !mqTracker.ownOnly",
+          "group": "navigation@2"
+        },
+        {
+          "command": "mqTracker.showAll",
+          "when": "view == mqTracker.queues && mqTracker.ownOnly",
+          "group": "navigation@2"
+        },
+        {
           "command": "mqTracker.addRepo",
           "when": "view == mqTracker.queues",
-          "group": "navigation@2"
+          "group": "navigation@3"
         },
         {
           "command": "mqTracker.openSettings",
           "when": "view == mqTracker.queues",
-          "group": "navigation@3"
+          "group": "navigation@4"
+        },
+        {
+          "command": "mqTracker.addWorkspaceRepo",
+          "when": "view == mqTracker.queues && mqTracker.hasWorkspaceRepo",
+          "group": "1_add@1"
         }
       ],
       "view/item/context": [
@@ -193,6 +241,18 @@
         {
           "command": "mqTracker.openChecks",
           "when": "false"
+        },
+        {
+          "command": "mqTracker.openLink",
+          "when": "false"
+        },
+        {
+          "command": "mqTracker.showOwnOnly",
+          "when": "!mqTracker.ownOnly"
+        },
+        {
+          "command": "mqTracker.showAll",
+          "when": "mqTracker.ownOnly"
         }
       ]
     },
@@ -229,10 +289,21 @@
           "minimum": 15,
           "description": "%config.pollSeconds%"
         },
+        "mqTracker.unfocusedPollSeconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 0,
+          "markdownDescription": "%config.unfocusedPollSeconds%"
+        },
         "mqTracker.notify": {
           "type": "boolean",
           "default": true,
           "description": "%config.notify%"
+        },
+        "mqTracker.notifyProgress": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.notifyProgress%"
         },
         "mqTracker.enterpriseUri": {
           "type": "string",
@@ -240,7 +311,60 @@
           "markdownDescription": "%config.enterpriseUri%"
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "mqTracker.gettingStarted",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
+        "steps": [
+          {
+            "id": "mqTracker.step.signIn",
+            "title": "%walkthrough.signIn.title%",
+            "description": "%walkthrough.signIn.description%",
+            "media": {
+              "markdown": "media/walkthrough/sign-in.md"
+            },
+            "completionEvents": [
+              "onContext:mqTracker.signedIn"
+            ]
+          },
+          {
+            "id": "mqTracker.step.addRepo",
+            "title": "%walkthrough.addRepo.title%",
+            "description": "%walkthrough.addRepo.description%",
+            "media": {
+              "markdown": "media/walkthrough/add-repo.md"
+            },
+            "completionEvents": [
+              "onContext:mqTracker.hasRepos"
+            ]
+          },
+          {
+            "id": "mqTracker.step.alerts",
+            "title": "%walkthrough.alerts.title%",
+            "description": "%walkthrough.alerts.description%",
+            "media": {
+              "markdown": "media/walkthrough/alerts.md"
+            },
+            "completionEvents": [
+              "onCommand:mqTracker.openSettings"
+            ]
+          },
+          {
+            "id": "mqTracker.step.demo",
+            "title": "%walkthrough.demo.title%",
+            "description": "%walkthrough.demo.description%",
+            "media": {
+              "markdown": "media/walkthrough/demo.md"
+            },
+            "completionEvents": [
+              "onCommand:mqTracker.toggleDemo"
+            ]
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run build",

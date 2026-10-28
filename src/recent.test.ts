@@ -36,3 +36,18 @@ describe("RecentEvents", () => {
     expect(events[0]!.outcome.kind).toBe("merged");
   });
 });
+
+describe("RecentEvents persistence", () => {
+  it("restores a snapshot newest first, skipping unreadable items", () => {
+    const recent = new RecentEvents(1000);
+    recent.add({ entry: entry(1), outcome: { kind: "merged", at: null }, observedAt: 100 });
+    recent.add({ entry: entry(2), outcome: { kind: "removed", at: null, reason: "x", failedChecks: [{ name: "ci", url: null }] }, observedAt: 300 });
+    const saved = JSON.parse(JSON.stringify(recent.snapshot(400))) as unknown[];
+    const restored = new RecentEvents(1000);
+    restored.load([...saved, null, { entry: { repo: "x" } }, "junk"]);
+    expect(restored.list(400)).toEqual(recent.list(400));
+    expect(restored.list(1200).map((e) => e.entry.number)).toEqual([2]);
+    restored.load(undefined);
+    expect(restored.list(400)).toHaveLength(1);
+  });
+});

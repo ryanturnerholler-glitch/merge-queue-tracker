@@ -64,7 +64,12 @@ const STEPS: Step[] = [
 const OUTCOMES: Record<number, Outcome> = {
   41: { kind: "merged", at: null },
   42: { kind: "merged", at: null },
-  43: { kind: "removed", at: null, reason: "The merge queue removed this pull request because a required check failed" },
+  43: {
+    kind: "removed",
+    at: null,
+    reason: "The merge queue removed this pull request because a required check failed",
+    failedChecks: [{ name: "unit tests", url: null }],
+  },
   44: { kind: "removed", at: null, reason: "Removed by octo-reviewer" },
   45: { kind: "merged", at: null },
 };

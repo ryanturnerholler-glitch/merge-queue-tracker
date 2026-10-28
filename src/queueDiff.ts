@@ -1,8 +1,10 @@
-import type { QueueEntry, RepoQueue } from "./types";
+import type { EntryState, QueueEntry, RepoQueue } from "./types";
 
 export interface QueueDiff {
   entered: QueueEntry[];
   moved: { entry: QueueEntry; from: number }[];
+  /** Entries whose state changed between polls, such as QUEUED to UNMERGEABLE. */
+  changed: { entry: QueueEntry; from: EntryState }[];
   /** Entries present last poll and gone now. Why they left is resolved separately. */
   left: QueueEntry[];
 }
@@ -17,7 +19,7 @@ export function entryKey(entry: { repo: string; number: number }): string {
  * phantom "left" events.
  */
 export function diffQueues(previous: RepoQueue[] | undefined, next: RepoQueue[]): QueueDiff {
-  const diff: QueueDiff = { entered: [], moved: [], left: [] };
+  const diff: QueueDiff = { entered: [], moved: [], changed: [], left: [] };
   if (!previous) return diff;
   const previousByRepo = new Map(previous.map((q) => [q.repo.toLowerCase(), q]));
 
@@ -35,6 +37,7 @@ export function diffQueues(previous: RepoQueue[] | undefined, next: RepoQueue[])
       }
       remaining.delete(key);
       if (was.position !== entry.position) diff.moved.push({ entry, from: was.position });
+      if (was.state !== entry.state) diff.changed.push({ entry, from: was.state });
     }
     diff.left.push(...remaining.values());
   }

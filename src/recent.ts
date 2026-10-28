@@ -22,4 +22,32 @@ export class RecentEvents {
   clear(): void {
     this.items = [];
   }
+
+  /** Everything still inside the window, for persisting across window reloads. */
+  snapshot(now = Date.now()): RecentEvent[] {
+    return this.list(now);
+  }
+
+  /** Restores a persisted snapshot. Unreadable items are skipped; expired ones drop on the next `list`. */
+  load(saved: unknown): void {
+    if (!Array.isArray(saved)) return;
+    this.items = [];
+    const events = saved.filter(isRecentEvent).sort((a, b) => b.observedAt - a.observedAt);
+    for (const event of events.reverse()) this.add(event);
+  }
+}
+
+function isRecentEvent(value: unknown): value is RecentEvent {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Partial<RecentEvent>;
+  const entry = v.entry as Partial<RecentEvent["entry"]> | undefined;
+  const outcome = v.outcome as Partial<RecentEvent["outcome"]> | undefined;
+  return (
+    typeof v.observedAt === "number" &&
+    !!entry &&
+    typeof entry.repo === "string" &&
+    typeof entry.number === "number" &&
+    !!outcome &&
+    (outcome.kind === "merged" || outcome.kind === "removed")
+  );
 }

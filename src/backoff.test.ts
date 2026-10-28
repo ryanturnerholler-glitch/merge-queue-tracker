@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { clampPollSeconds, DEFAULT_POLL_SECONDS, ERROR_BACKOFF_SECONDS, MIN_POLL_SECONDS, nextDelay } from "./backoff";
+import {
+  clampPollSeconds,
+  clampUnfocusedPollSeconds,
+  DEFAULT_POLL_SECONDS,
+  DEFAULT_UNFOCUSED_POLL_SECONDS,
+  ERROR_BACKOFF_SECONDS,
+  MIN_POLL_SECONDS,
+  nextDelay,
+} from "./backoff";
 
 describe("clampPollSeconds", () => {
   it("enforces the minimum and the default", () => {
@@ -46,5 +54,19 @@ describe("nextDelay", () => {
 
   it("does not back off at exactly the threshold", () => {
     expect(nextDelay({ pollSeconds: 30, failed: false, rateLimit: { remaining: 200, resetAt: "" }, now }).reason).toBe("normal");
+  });
+});
+
+describe("clampUnfocusedPollSeconds", () => {
+  it("defaults to five minutes, treats 0 and below as paused, and never goes below the focused interval", () => {
+    expect(clampUnfocusedPollSeconds(undefined, 45)).toBe(DEFAULT_UNFOCUSED_POLL_SECONDS);
+    expect(clampUnfocusedPollSeconds("300", 45)).toBe(DEFAULT_UNFOCUSED_POLL_SECONDS);
+    expect(clampUnfocusedPollSeconds(0, 45)).toBe(0);
+    expect(clampUnfocusedPollSeconds(-5, 45)).toBe(0);
+    expect(clampUnfocusedPollSeconds(0.4, 45)).toBe(0);
+    expect(clampUnfocusedPollSeconds(20, 45)).toBe(45);
+    expect(clampUnfocusedPollSeconds(20, 5)).toBe(20);
+    expect(clampUnfocusedPollSeconds(10, 5)).toBe(MIN_POLL_SECONDS);
+    expect(clampUnfocusedPollSeconds(600.9, 45)).toBe(600);
   });
 });

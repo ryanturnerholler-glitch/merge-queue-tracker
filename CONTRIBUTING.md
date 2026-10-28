@@ -50,12 +50,34 @@ GitHub; use it for the UI items, then a real repository for the rest.
       on removal moves to *Recent* with the reason and a warning toast with
       *Open checks* and *Open PR*.
 - [ ] **Unfocused window**: switch to another app; the log says polling
-      paused and no polls happen until you return, when one fires at once.
+      slowed to five minutes, one poll happens at that interval, and one fires
+      at once when you return. With `mqTracker.unfocusedPollSeconds` set to
+      `0`, the log says polling paused and no polls happen until you return.
+- [ ] **Window reload**: enqueue one of your pull requests, run *Developer:
+      Reload Window* while it merges; after the reload the log says the
+      snapshot was restored, the pull request shows under *Recent*, and the
+      merged toast fires.
+- [ ] **Failed checks**: a removal caused by a failing check names the check
+      in the toast and the *Recent* row, and *Open checks* opens that check.
+- [ ] **Progress alerts**: your pull request reaching position 1 shows an
+      info toast; turning unmergeable while queued shows a warning toast.
+      Both stay silent with `mqTracker.notifyProgress` off.
+- [ ] **Workspace repository**: open a folder whose remote is on GitHub; the
+      welcome view and the view title's menu offer *Track This Workspace's
+      Repository*, and it adds the right `owner/name`.
+- [ ] **Filter**: the filter button hides other people's pull requests, shows
+      a "hidden" row that restores them, and the choice survives a reload.
+- [ ] **Walkthrough**: *Help → Welcome → Get Started with Merge Queue Tracker*
+      lists four steps and each button runs its command.
 - [ ] **Rate-limit backoff**: with the rate limit under 200 points (or a
       simulated API error), the tree shows a warning row and the log shows a
       five-minute or longer delay, without repeated toasts.
-- [ ] **GHES**: with `mqTracker.enterpriseUri` and `github-enterprise.uri`
-      set, sign-in uses the enterprise provider and queries hit that host.
+- [ ] **GHES**: with only `github-enterprise.uri` set, sign-in uses the
+      enterprise provider and queries hit that host; `mqTracker.enterpriseUri`
+      overrides it.
+- [ ] **SSO**: a repository in an organisation that enforces SAML, with the
+      token not yet authorised, shows the "Single sign-on required" row and
+      clicking it opens the authorization page.
 - [ ] **Themes**: light, dark, and high-contrast all render the icons and the
       highlight for your own pull requests.
 - [ ] **Remove**: the repository row's context menu removes it from settings.
